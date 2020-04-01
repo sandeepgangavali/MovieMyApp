@@ -1,0 +1,115 @@
+version : '3'
+services :
+  Netflix-EurekaNamingService:
+    image: eureka-image
+    build: Netflix-EurekaNamingService
+    network_mode : host
+    container_name : eureka-container
+    restart : unless-stopped
+    ports:
+     - "8761:8761"
+     
+  Spring-ConfigServer:
+    image : configserver-image
+    build : Spring-ConfigServer
+    restart : always
+    network_mode : host
+    container_name : configserver-container
+    depends_on:
+      - Netflix-EurekaNamingService
+    ports :
+      - 8092:8092
+    expose:
+       - 8092
+       
+  Netflix-ZuulAPIGatewayService:
+    image : netflixzuul-image
+    build : Netflix-ZuulAPIGatewayService
+    restart : always
+    network_mode : host
+    container_name : netflixzuul-container
+    depends_on:
+      - Spring-ConfigServer
+    ports :
+      - 8765:8765
+    expose:
+       - 8765
+       
+  MovieCruiserService:
+    image : moviecruiserservice-image
+    build : MovieCruiserService
+    restart : always
+    network_mode : host
+    container_name : moviecruiserservice-container
+    depends_on:
+      - mongo
+      - Spring-ConfigServer
+    ports :
+      - 8083:8083
+    expose:
+       - 8083
+  AuthenticationService:
+    image : authenticationservice-image
+    build : AuthenticationService
+    restart : always
+    network_mode : host
+    container_name : authenticationservice-container
+    depends_on:
+      - mongo
+      - Spring-ConfigServer
+    ports :
+      - 8081:8081
+    expose:
+       - 8081
+       
+  UserProfileService:
+    image : userprofileservice-image
+    build : UserProfileService
+    restart : always
+    network_mode : host
+    container_name : userprofileservice-container
+    depends_on:
+      - mysql
+      - Spring-ConfigServer
+    ports :
+      - 8082:8082
+    expose:
+       - 8082
+       
+  mongo:
+    image: mongo
+    restart: always
+    network_mode : host
+    
+  node:
+    image: frontend-image
+    build: MovieCruiser
+    network_mode : host
+    restart : always
+    container_name : frontend-container
+    ports:
+      - "8005:8005" 
+      
+  mysql:
+    image: mysql:5.7
+    restart: always
+    network_mode : host
+    environment:
+      MYSQL_DATABASE: Movie_Cruiser
+      MYSQL_ROOT_PASSWORD: very_strong_password
+      MYSQL_USER: sandeep
+      MYSQL_PASSWORD: sandeep
+    ports:
+      - 3306:3306
+  
+  rabbit1:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    labels:
+      NAME: "favorite"
+    hostname: localhost
+    network_mode: host
+  
+  
